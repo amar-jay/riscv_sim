@@ -1,0 +1,8 @@
+node_modules
+obj_dir
+bins
+build
+binutils*
+
+
+*.log
