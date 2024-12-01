@@ -12,7 +12,7 @@ static string banner = "\
 ";
 
 int main(int argc, char **argv) {
-  cout << banner << endl;
+  // cout << banner << endl;
 
   if (argc != 3) {
     cerr << "Usage: " << argv[0] << " [program_code] [m/a]" << endl;

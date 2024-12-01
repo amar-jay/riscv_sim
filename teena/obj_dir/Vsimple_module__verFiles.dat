@@ -1,0 +1,13 @@
+# DESCRIPTION: Verilator output: Timestamp data for --skip-identical.  Delete at will.
+C "--compiler gcc --cc simple_module.v --exe main.cpp -CFLAGS -std=c++17-Iobj_dir/-Iobj_dir/-I/usr/share/verilator/include/-I/usr/share/verilator/include/vltstd/-DVL_DEBUG-O2"
+S   7892640    56072  1730137655   549572174  1598506306           0 "/usr/bin/verilator_bin"
+T      4505   307962  1732984988   735995786  1732984988   735995786 "obj_dir/Vsimple_module.cpp"
+T      2828   277725  1732984988   725218137  1732984988   725218137 "obj_dir/Vsimple_module.h"
+T      1911   313480  1732984988   735995786  1732984988   735995786 "obj_dir/Vsimple_module.mk"
+T      1993   278256  1732984988   735995786  1732984988   735995786 "obj_dir/Vsimple_module__Slow.cpp"
+T       579   239021  1732984988   725218137  1732984988   725218137 "obj_dir/Vsimple_module__Syms.cpp"
+T       837   261587  1732984988   725218137  1732984988   725218137 "obj_dir/Vsimple_module__Syms.h"
+T       305   313444  1732984988   735995786  1732984988   735995786 "obj_dir/Vsimple_module__ver.d"
+T         0        0  1732984988   735995786  1732984988   735995786 "obj_dir/Vsimple_module__verFiles.dat"
+T      1578   313274  1732984988   735995786  1732984988   735995786 "obj_dir/Vsimple_module_classes.mk"
+S       289  1037834  1732948737   773943323  1732948737   773943323 "simple_module.v"

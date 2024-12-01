@@ -3,6 +3,7 @@
 #include "inst.h"
 #include <bitset>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -316,19 +317,14 @@ void inst_memory_t::parse_inst_hex(uint32_t inst_int, size_t m_line_num) {
   uint32_t rs2 = (inst_int >> 20) & 0x1F;    // bits 20-24
   uint32_t funct7 = (inst_int >> 25) & 0x7F; // bits 25-31
   int32_t imm = 0;                           // Immediate value (sign-extended)
-  cout << "opcode: " << std::bitset<1>(opcode) << endl;
-  cout << "funt3: " << std::hex << funct3 << "\tfunt7: " << std::hex << funct7
-       << std::dec << "rd: " << rd << " rs1: " << rs1 << " rs2: " << rs2
-       << " imm: " << imm << endl;
 
   switch (opcode) {
   case 0x00: // NOP instructions
     cout << "Does nothing";
     inst.op = op_nop;
     break;
+
   case 0x33: { // R-type instructions
-    cout << "funt3: " << std::hex << funct3 << "\tfunt7: " << std::hex << funct7
-         << std::dec << endl;
     switch (funct3) {
     case 0x00:
       if (funct7 == 0x20)
@@ -375,6 +371,7 @@ void inst_memory_t::parse_inst_hex(uint32_t inst_int, size_t m_line_num) {
     inst.type = op_r_type;
     break;
   }
+
   case 0x13: { // I-type instructions
     switch (funct3) {
     case 0x00:
@@ -400,12 +397,15 @@ void inst_memory_t::parse_inst_hex(uint32_t inst_int, size_t m_line_num) {
       break;
     case 0x05:
       if (funct7 == 0x20)
-        throw std::invalid_argument("Invalid I-type instruction");
+        inst.op = op_srai;
       else if (funct7 == 0x00)
-        throw std::invalid_argument("Invalid I-type instruction");
+        inst.op = op_srli;
       break; // Not used.
     case 0x06:
       inst.op = op_ori;
+      break;
+    case 0x07:
+      inst.op = op_addi;
       break;
     default:
       throw std::invalid_argument("Invalid funct3 for I-type");
@@ -413,16 +413,22 @@ void inst_memory_t::parse_inst_hex(uint32_t inst_int, size_t m_line_num) {
     inst.type = op_i_type;
     break;
   }
+
   case 0x17: { // U-type instructions (LUI)
     inst.op = op_lui;
     inst.type = op_u_type;
     break;
   }
+
+  case 0x6F:
+  case 0x67:
   case 0x37: { // UJ-type instructions (JAL)
     inst.op = op_jal;
     inst.type = op_uj_type;
     break;
   }
+
+  case 0x63:
   case 0x3B: { // SB-type instructions (Branches)
     switch (funct3) {
     case 0x00:
@@ -443,8 +449,12 @@ void inst_memory_t::parse_inst_hex(uint32_t inst_int, size_t m_line_num) {
     inst.type = op_sb_type;
     break;
   }
+
   default:
-    throw std::invalid_argument("Unknown opcode");
+    std::bitset<8> binaryOpcode(opcode); // 32-bit representation of the opcode
+    std::string message = "Unknown opcode: " + std::to_string(opcode) + " -> " +
+                          binaryOpcode.to_string();
+    throw std::invalid_argument(message);
   }
 
   // Extract register fields and immediate values based on instruction type
@@ -522,7 +532,8 @@ void inst_memory_t::parse_inst_hex(uint32_t inst_int, size_t m_line_num) {
     break;
   }
   default:
-    throw std::invalid_argument("Unknown instruction type");
+    throw std::invalid_argument("Unknown instruction type, line #" +
+                                std::to_string(m_line_num));
   }
 
   inst.imm = imm;
@@ -532,6 +543,12 @@ void inst_memory_t::parse_inst_hex(uint32_t inst_int, size_t m_line_num) {
   inst.rs2_val = rs2;
   inst.rd_num = rd_num;
   inst.rd_val = rd;
+
+  cout << "opcode: " << std::bitset<8>(opcode) << " | ";
+  cout << "funt3: " << std::hex << funct3 << "| funt7: " << std::hex << funct7
+       << std::dec << "| rd: " << rd << "| rs1: " << rs1 << "| rs2: " << rs2
+       << "| imm: " << imm << "\t line no: " << m_line_num << endl;
+
   // Set the program counter and memory address
   inst.pc = m_line_num * 4; // Assuming 4 bytes per instruction
   inst.memory_addr = inst.pc;
