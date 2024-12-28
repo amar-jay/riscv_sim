@@ -33,7 +33,6 @@ VM_PREFIX = Vsimple_module
 VM_MODPREFIX = Vsimple_module
 # User CFLAGS (from -CFLAGS on Verilator command line)
 VM_USER_CFLAGS = \
-	-std=c++17-Iobj_dir/-Iobj_dir/-I/usr/share/verilator/include/-I/usr/share/verilator/include/vltstd/-DVL_DEBUG-O2 \
 
 # User LDLIBS (from -LDFLAGS on Verilator command line)
 VM_USER_LDLIBS = \

@@ -5,12 +5,13 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 
 using namespace std;
 
-inst_memory_t::inst_memory_t(const char *m_program_code, const char _mode) {
+inst_memory_t::inst_memory_t(const char *m_program_code, const char *_mode) {
   memory.reserve(100); // Reserve space for instructions.
   mode = _mode;
   load_program_code(m_program_code); // Load a program code.
@@ -64,9 +65,9 @@ void inst_memory_t::load_program_code(const char *m_program_code) {
 
     // Parse an instruction string.
     transform(line.begin(), line.end(), line.begin(), ::tolower);
-    if (mode == 'a') {
+    if (strcmp(mode, "assembly") == 0) {
       parse_inst_str(line, line_num);
-    } else if (mode == 'm') {
+    } else if (strcmp(mode, "machine") == 0) {
       uint32_t raw_inst =
           std::stoul(line, nullptr, 16); // convert to 32 bit integer
       parse_inst_hex(raw_inst, line_num);

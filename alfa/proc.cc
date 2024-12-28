@@ -27,7 +27,7 @@ proc_t::~proc_t() {
 }
 
 // Processor initialization
-void proc_t::init(const char *m_program_code, const char mode) {
+void proc_t::init(const char *m_program_code, const char *mode) {
   inst_memory =
       new inst_memory_t(m_program_code, mode); // Create an instruction memory.
   br_predictor = new br_predictor_t(0, 4, 0);  // Create a branch predictor.

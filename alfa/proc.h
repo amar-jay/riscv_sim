@@ -16,8 +16,8 @@ public:
   ~proc_t();
 
   void init(const char *m_program_code,
-            const char mode); // Processor initialization
-  void run();                 // Run the processor pipeline.
+            const char *mode); // Processor initialization
+  void run();                  // Run the processor pipeline.
 
 private:
   void writeback();   // Writeback stage

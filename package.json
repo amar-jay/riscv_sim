@@ -1,0 +1,12 @@
+{
+  "name": "riscv_sim",
+  "private": "true",
+  "type": "module",
+  "workspaces": [
+    "__alfa",
+    "app"
+  ],
+  "scripts": {
+    "clean": "rm -rf node_modules **/node_modules bun.lockb **/bun.lockb"
+  }
+}

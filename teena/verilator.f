@@ -1,1 +1,6 @@
-simple_module.v
+src/alu.v
+src/cpu.v
+src/encoder.v
+src/instruction_decoder.v
+src/ram.v
+src/simple_module.v

@@ -56,4 +56,7 @@ void Vsimple_module::_ctor_var_reset() {
     a = VL_RAND_RESET_I(8);
     b = VL_RAND_RESET_I(8);
     sum = VL_RAND_RESET_I(8);
+    { int __Vi0=0; for (; __Vi0<1; ++__Vi0) {
+            __Vm_traceActivity[__Vi0] = VL_RAND_RESET_I(1);
+    }}
 }
