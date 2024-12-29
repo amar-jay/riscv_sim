@@ -9,7 +9,7 @@ export default defineConfig({
   plugins: [react(), wasm()],
   resolve: {
     alias: {
-      "@riscv_sim/alfa": fileURLToPath(new URL("../__alfa", import.meta.url)),
+      "@riscv_sim/alfa": fileURLToPath(new URL("../alfa", import.meta.url)),
       "@": path.resolve(__dirname, "./src"),
     },
   },

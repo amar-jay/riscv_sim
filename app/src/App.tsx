@@ -82,7 +82,7 @@ function App() {
     <div>
       <div className="grid grid-cols-3">
         <div>
-          <p>Code</p>
+          <h1>Code</h1>
           <textarea
             className="h-64 w-full ring-1"
             value={code}
@@ -90,7 +90,7 @@ function App() {
           />
         </div>
         <div>
-          <p>Memory state</p>
+          <h1>Memory state</h1>
           <textarea
             className="h-64 w-full ring-1"
             value={memory}
@@ -98,7 +98,7 @@ function App() {
           />
         </div>
         <div>
-          <p>Register</p>
+          <h1>Register</h1>
           <textarea
             className="h-64 w-full ring-1"
             value={register}
