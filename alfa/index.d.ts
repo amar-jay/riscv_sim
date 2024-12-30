@@ -5,9 +5,7 @@ export interface AlfaWasm {
     program_code: Pointer,
     memory_state: Pointer,
     reg_state: Pointer,
-    is_debug_on: Pointer,
-    is_data_fwd_on: Pointer,
-    is_br_pred_on: Pointer,
+    codeType: Pointer,
   ): number;
   allocate(a: any, b: any, c: any): Pointer;
   _free(...params: any): any;
@@ -23,4 +21,3 @@ export interface AlfaWasm {
 export declare const AlfaWasmPromise: Promise<AlfaWasm>;
 
 export default AlfaWasmPromise;
-

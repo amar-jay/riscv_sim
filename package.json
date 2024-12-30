@@ -3,7 +3,7 @@
   "private": "true",
   "type": "module",
   "workspaces": [
-    "__alfa",
+    "alfa",
     "app"
   ],
   "scripts": {

@@ -41,7 +41,7 @@ function App() {
   const { onRunKiteWasm } = useAlfa({
     codeState: code,
     registerState: register,
-    memoryState: register,
+    memoryState: memory,
     alfaInstance: wasmInstance,
     setExecOutput,
     RVSettings: {

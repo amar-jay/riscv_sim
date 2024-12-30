@@ -52,12 +52,13 @@ export function useAlfa({
       `i8`,
       ALLOC_NORMAL,
     );
-    const isDebugOnInt8Ptr = _malloc(1);
-    const isDataFwdOnInt8Ptr = _malloc(1);
-    const isBrPredOnInt8Ptr = _malloc(1);
-    setValue(isDebugOnInt8Ptr, is_debug_on, `i8`);
-    setValue(isDataFwdOnInt8Ptr, is_data_fwd_on, `i8`);
-    setValue(isBrPredOnInt8Ptr, is_br_pred_on, `i8`);
+
+    const assemblyCharPtr = allocate(
+      intArrayFromString("assembly"),
+      `i8`,
+      ALLOC_NORMAL,
+    );
+
     const latestRunTime = `Latest execution time: ${new Date().toLocaleString()}`;
     let executionOutputCharPtr: ReturnType<typeof _run_alfa_once> | null = null;
     let errorPtr: number | null = null;
@@ -66,28 +67,22 @@ export function useAlfa({
         codeCharPtr,
         memoryCharPtr,
         registerCharPtr,
-        isDebugOnInt8Ptr,
-        isDataFwdOnInt8Ptr,
-        isBrPredOnInt8Ptr,
+        assemblyCharPtr,
       );
 
       const executionOutputInJSString = UTF8ToString(executionOutputCharPtr);
       setExecOutput(`${latestRunTime}\n${executionOutputInJSString}`);
     } catch (e) {
       errorPtr = e as number;
+      console.error(e);
       executionOutputCharPtr = _get_exception_message(errorPtr);
       setExecOutput(
         `${latestRunTime}\n${UTF8ToString(executionOutputCharPtr)}`,
       );
     } finally {
-      [
-        codeCharPtr,
-        memoryCharPtr,
-        registerCharPtr,
-        isDebugOnInt8Ptr,
-        isDataFwdOnInt8Ptr,
-        isBrPredOnInt8Ptr,
-      ].forEach(_free);
+      [codeCharPtr, memoryCharPtr, registerCharPtr, assemblyCharPtr].forEach(
+        _free,
+      );
       [executionOutputCharPtr, errorPtr].forEach((ptr) => {
         if (ptr) _free(ptr);
       });
