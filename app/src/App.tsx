@@ -103,7 +103,10 @@ function App() {
   const [instructionContent, setInstructionContent] = useState("");
   const [errorContent, setErrorContent] = useState("");
   const [outputContent, setOutputContent] = useState("");
-  const code = useMemo(() => activeFile.content, [activeFile]);
+  const code = useMemo(() => {
+  console.log("changed files");
+  return activeFile.content
+  }, [activeFile]);
 
   const { onRunKiteWasm, wasmRequestStatus } = useAlfa({
     codeState: code,
@@ -121,12 +124,19 @@ function App() {
     setInstructionContent("SUCCESSFULL RUN. Unimplemented yet!");
   }, [execOutput]);
 
+  const clearTerminal = () => {
+    setErrorContent("")
+    setOutputContent("")
+    setInstructionContent("")
+    setActiveFile({})
+  }
   const handleCompile = () => {
     onRunKiteWasm();
   };
 
   return (
     <RISCVCodeEditor
+      clearTerminal={clearTerminal}
       setActiveFile={setActiveFile}
       activeFile={activeFile}
       handleCompile={handleCompile}

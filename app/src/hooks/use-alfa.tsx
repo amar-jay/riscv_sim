@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { AlfaWasmPromise, AlfaWasm } from "@riscv_sim/alfa";
+import { AlfaWasmPromise, AlfaWasm } from "@riscv_sim/kite";
 interface AlfaProps {
   codeState: string;
   memoryState: string;

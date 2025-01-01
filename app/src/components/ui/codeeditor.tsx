@@ -55,6 +55,7 @@ interface EditorProps {
   files: CodeFile[];
   activeFile: CodeFile;
   setActiveFile: React.Dispatch<React.SetStateAction<CodeFile>>;
+  clearTerminal: ()=>void;
   handleCompile: () => void;
   setFiles: React.Dispatch<React.SetStateAction<CodeFile[]>>;
   instructionContent: string;
@@ -67,6 +68,7 @@ export const RISCVCodeEditor: React.FC<EditorProps> = ({
   files,
   setFiles,
   handleCompile,
+  clearTerminal,
   instructionContent,
   outputContent,
   errorContent,
@@ -341,6 +343,8 @@ export const RISCVCodeEditor: React.FC<EditorProps> = ({
                         className="px-3 text-sm rounded-none data-[state=active]:bg-white data-[state=active]:shadow-none border-b-2 data-[state=active]:border-blue-500 border-transparent"
                         onClick={(e) => {
                           e.preventDefault();
+                          clearTerminal()
+                          setShowTerminal("")
                           setActiveFile(file);
                         }}
                       >
@@ -381,7 +385,11 @@ export const RISCVCodeEditor: React.FC<EditorProps> = ({
                             variant="outline"
                             onClick={() => {
                               handleCompile();
-                              setShowTerminal("Output");
+                              if (errorContent.length > 4) {
+                                setShowTerminal("Errors");
+                              } else {
+                                setShowTerminal("Output");
+                              }
                             }}
                           >
                             Compile & Run
@@ -405,19 +413,19 @@ export const RISCVCodeEditor: React.FC<EditorProps> = ({
             </div>
 
             {showTerminal === "Instructions" && (
-              <div className="bg-black text-white p-4 h-1/3 overflow-auto text-xs">
+              <div className="bg-black text-white p-4 h-[168px] overflow-y-auto text-xs">
                 <h3 className="text-lg font-semibold mb-2">Instructions</h3>
                 <pre>{instructionContent}</pre>
               </div>
             )}
             {showTerminal === "Output" && (
-              <div className="bg-black text-white p-4 h-1/3 overflow-auto  text-xs">
+              <div className="bg-black text-white p-4 h-[168px] overflow-y-auto  text-xs">
                 <h3 className="text-lg font-semibold mb-2">Output</h3>
                 <pre>{outputContent}</pre>
               </div>
             )}
             {showTerminal === "Errors" && (
-              <div className="bg-red-100 text-red-900 p-4 h-1/3 overflow-auto text-xs">
+              <div className="bg-red-100 text-red-900 p-4 h-[168px] overflow-y-auto text-xs">
                 <h3 className="text-lg font-semibold mb-2">Errors</h3>
                 <pre>{errorContent}</pre>
               </div>

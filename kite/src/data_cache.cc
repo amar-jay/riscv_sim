@@ -4,13 +4,18 @@
 
 using namespace std;
 
-data_cache_t::data_cache_t(uint64_t *m_ticks, uint64_t m_cache_size,
-                           uint64_t m_block_size, uint64_t m_ways) :
+data_cache_t::data_cache_t(
+    uint64_t *m_ticks, uint64_t m_cache_size,
+    int8_t *is_debug_on, int8_t *is_data_fwd_on,
+    uint64_t m_block_size, uint64_t m_ways
+) :
     memory(0),
     ticks(m_ticks),
     blocks(0),
     cache_size(m_cache_size),
     block_size(m_block_size),
+    is_debug_on(is_debug_on),
+    is_data_fwd_on(is_data_fwd_on),
     num_sets(0),
     num_ways(m_ways),
     block_offset(0),
@@ -31,16 +36,14 @@ data_cache_t::data_cache_t(uint64_t *m_ticks, uint64_t m_cache_size,
     }
     // Check if the block size is a multiple of doubleword.
     if((block_size & 0b111) || (val != 1)) {
-        cerr << "Error: cache block size must be a multiple of doubleword" << endl;
-        exit(1);
+        throw std::logic_error("Cache Error: cache block size must be a multiple of doubleword");
     }
 
     // Check if the number of ways is a power of two.
     val = num_ways;
     while(!(val & 0b1)) { val = val >> 1; }
     if(val != 1) {
-        cerr << "Error: number of ways must be a power of two" << endl;
-        exit(1);
+        throw std::logic_error("Cache Error: number of ways must be a power of two");
     }
 
     // Calculate the number of sets.
@@ -55,8 +58,7 @@ data_cache_t::data_cache_t(uint64_t *m_ticks, uint64_t m_cache_size,
     set_mask = set_mask << block_offset;
     // Check if the number of sets is a power of two.
     if(val != 1) {
-        cerr << "Error: number of sets must be a power of two" << endl;
-        exit(1);
+        throw std::logic_error("Cache Error: number of sets must be a power of two");
     }
     
     // Allocate cache blocks.
@@ -77,12 +79,11 @@ void data_cache_t::connect(data_memory_t *m_memory) { memory = m_memory; }
 bool data_cache_t::is_free() const { return !missed_inst; }
 
 // Read data from cache.
-void data_cache_t::read(inst_t *m_inst) {
+void data_cache_t::read(inst_t *m_inst, std::ostringstream& program_log) {
     // Check the memory address alignment.
     uint64_t addr = m_inst->memory_addr;
     if(addr & 0b111) {
-        cerr << "Error: invalid alignment of memory address " << addr << endl;
-        exit(1);
+        throw std::logic_error("Cache Error: invalid alignment of memory address " + std::to_string(addr));
     }
 
     // Calculate the set index and tag.
@@ -98,9 +99,9 @@ void data_cache_t::read(inst_t *m_inst) {
         block->last_access = *ticks;
         // Read a doubleword in the block.
         m_inst->rd_val = *(block->data + ((addr & block_mask) >> 3));
-#ifdef DATA_FWD
-        m_inst->rd_ready = true;
-#endif
+        if (*is_data_fwd_on) {
+            m_inst->rd_ready = true;
+        }
         num_accesses++;
         num_loads++;
     }
@@ -108,20 +109,19 @@ void data_cache_t::read(inst_t *m_inst) {
         missed_inst = m_inst;
         memory->load_block(addr & ~block_mask, block_size);
         num_misses++;
-#ifdef DEBUG
-        cout << *ticks << " : cache miss : addr = " << addr
+        if (*is_debug_on) {
+            program_log << *ticks << " : cache miss : addr = " << addr
              << " (tag = " << tag << ", set = " << set_index << ")" << endl;
-#endif
+        }
     }
 }
 
 // Write data in memory.
-void data_cache_t::write(inst_t *m_inst) {
+void data_cache_t::write(inst_t *m_inst, std::ostringstream& program_log) {
     // Check the memory address alignment.
     uint64_t addr = m_inst->memory_addr;
     if(addr & 0b111) {
-        cerr << "Error: invalid alignment of memory address " << addr << endl;
-        exit(1);
+        throw std::logic_error("Cache Error: invalid alignment of memory address " + std::to_string(addr));
     }
 
     // Calculate the set index and tag.
@@ -145,15 +145,15 @@ void data_cache_t::write(inst_t *m_inst) {
         missed_inst = m_inst;
         memory->load_block(addr & ~block_mask, block_size);
         num_misses++;
-#ifdef DEBUG
-        cout << *ticks << " : cache miss : addr = " << addr
+        if (*is_debug_on) {
+            program_log << *ticks << " : cache miss : addr = " << addr
              << " (tag = " << tag << ", set = " << set_index << ")" << endl;
-#endif
+        }
     }
 }
 
 // Handle a memory response.
-void data_cache_t::handle_response(int64_t *m_data) {
+void data_cache_t::handle_response(int64_t *m_data, std::ostringstream& program_log) {
     // Calculate the set index and tag.
     uint64_t addr = missed_inst->memory_addr;
     uint64_t set_index = (addr & set_mask) >> block_offset;
@@ -162,38 +162,38 @@ void data_cache_t::handle_response(int64_t *m_data) {
     // Block replacement
     block_t *allocator = &blocks[set_index][0];
     if(allocator->dirty) { num_writebacks++; }
-#ifdef DEBUG
-    if(allocator->valid) {
-        cout << *ticks << " : cache block eviction : addr = " << addr
-             << " (tag = " << tag << ", set = " << set_index << ")" << endl;
+    if (*is_debug_on) {
+        if(allocator->valid) {
+            program_log << *ticks << " : cache block eviction : addr = " << addr
+                << " (tag = " << tag << ", set = " << set_index << ")" << endl;
+        }
     }
-#endif
     // Place the missed block.
     *allocator = block_t(tag, m_data, /* valid */ true);
 
     // Replay the cache access.
-    if(missed_inst->op == op_ld) { read(missed_inst); }
-    else { write(missed_inst); }
+    if(missed_inst->op == op_ld) { read(missed_inst, program_log); }
+    else { write(missed_inst, program_log); }
     // Clear the missed instruction so that the cache becomes free.
     missed_inst = 0;
 }
 
 // Run data cache.
-bool data_cache_t::run() {
-    memory->run();          // Run the data memory.
+bool data_cache_t::run(std::ostringstream& program_log) {
+    memory->run(program_log);          // Run the data memory.
     return missed_inst;     // Return true if the cache is busy.
 }
 
 // Print cache stats.
-void data_cache_t::print_stats() {
-    cout << endl << "Data cache stats:" << endl;
-    cout.precision(3);
-    cout << "    Number of loads = " << num_loads << endl;
-    cout << "    Number of stores = " << num_stores << endl;
-    cout << "    Number of writebacks = " << num_writebacks << endl;
-    cout << "    Miss rate = " << fixed
+void data_cache_t::print_stats(std::ostringstream& program_log) {
+    program_log << endl << "Data cache stats:" << endl;
+    program_log.precision(3);
+    program_log << "    Number of loads = " << num_loads << endl;
+    program_log << "    Number of stores = " << num_stores << endl;
+    program_log << "    Number of writebacks = " << num_writebacks << endl;
+    program_log << "    Miss rate = " << fixed
          << (num_accesses ? double(num_misses) / double(num_accesses) : 0)
          << " (" << num_misses << "/" << num_accesses << ")" << endl;
-    cout.precision(-1);
+    program_log.precision(-1);
 }
 

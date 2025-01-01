@@ -24,3 +24,5 @@ $(EXE): $(OBJ)
 
 clean:
 	rm -f $(OBJ) $(EXE)
+	rm ./alfa_wasm.mjs
+	rm ./alfa_wasm.wasm

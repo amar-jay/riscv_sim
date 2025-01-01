@@ -1,6 +1,6 @@
 FROM emscripten/emsdk:latest
 
-WORKDIR /etc/alfa-wasm
+WORKDIR /etc/kite-wasm
 
 RUN ls -la
 

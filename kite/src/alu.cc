@@ -1,10 +1,13 @@
 #include <iostream>
+#include <sstream>
 #include "alu.h"
 
 using namespace std;
 
-alu_t::alu_t(uint64_t *m_ticks) :
+alu_t::alu_t(uint64_t *m_ticks, int8_t *is_debug_on, int8_t *is_data_fwd_on) :
     ticks(m_ticks),
+    is_data_fwd_on(is_data_fwd_on),
+    is_debug_on(is_debug_on),
     exit_ticks(0),
     run_inst(0) {
 }
@@ -22,11 +25,11 @@ inst_t* alu_t::get_output() {
         run_inst = 0;
         // Mark the rd value of instruction is ready for forwarding.
         // The rd value of ld instruction becomes ready in the memory stage.
-#ifdef DATA_FWD
-        if(inst && (inst->rd_num > 0) && (inst->op != op_ld)) {
-            inst->rd_ready = true;
+        if (*is_data_fwd_on) {
+            if(inst && (inst->rd_num > 0) && (inst->op != op_ld)) {
+                inst->rd_ready = true;
+            }
         }
-#endif
     }
     return inst;
 }
@@ -37,7 +40,7 @@ bool alu_t::is_free() {
 }
 
 // Execute an instruction.
-void alu_t::run(inst_t *m_inst) {
+void alu_t::run(inst_t *m_inst, std::ostringstream& program_log) {
     // Set run_inst and its exit ticks that the run_inst can leave the ALU.
     run_inst = m_inst;
     exit_ticks = *ticks + m_inst->alu_latency - 1;
@@ -77,31 +80,31 @@ void alu_t::run(inst_t *m_inst) {
         case op_ori:  { m_inst->rd_val = m_inst->rs1_val | m_inst->imm; break; }
         case op_xori: { m_inst->rd_val = m_inst->rs1_val ^ m_inst->imm; break; }
         case op_ld:  
-        case op_sd:   { m_inst->memory_addr = m_inst->rs1_val + m_inst->imm; break; }
-        case op_beq:  { m_inst->branch_target = 
-                       (m_inst->branch_taken = m_inst->rs1_val == m_inst->rs2_val) ?
-                       (m_inst->pc + (m_inst->imm << 1)) : (m_inst->pc + 4); break; }
-        case op_bge:  { m_inst->branch_target =
-                       (m_inst->branch_taken = m_inst->rs1_val >= m_inst->rs2_val) ?
-                       (m_inst->pc + (m_inst->imm << 1)) : (m_inst->pc + 4); break; }
-        case op_blt:  { m_inst->branch_target =
-                       (m_inst->branch_taken = m_inst->rs1_val <  m_inst->rs2_val) ? 
-                       (m_inst->pc + (m_inst->imm << 1)) : (m_inst->pc + 4); break; }
-        case op_bne:  { m_inst->branch_target = 
-                       (m_inst->branch_taken = m_inst->rs1_val != m_inst->rs2_val) ? 
-                       (m_inst->pc + (m_inst->imm << 1)) : (m_inst->pc + 4); break; }
+        case op_sd:   { m_inst->memory_addr  = m_inst->rs1_val + m_inst->imm; break; }
+        case op_beq:  { m_inst->branch_target = (m_inst->rs1_val == m_inst->rs2_val) ? 
+                                                (m_inst->pc + (m_inst->imm << 1)) :
+                                                (m_inst->pc + 4); break; }
+        case op_bge:  { m_inst->branch_target = (m_inst->rs1_val >= m_inst->rs2_val) ? 
+                                                (m_inst->pc + (m_inst->imm << 1)) :
+                                                (m_inst->pc + 4); break; }
+        case op_blt:  { m_inst->branch_target = (m_inst->rs1_val < m_inst->rs2_val) ? 
+                                                (m_inst->pc + (m_inst->imm << 1)) :
+                                                (m_inst->pc + 4); break; }
+        case op_bne:  { m_inst->branch_target = (m_inst->rs1_val != m_inst->rs2_val) ? 
+                                                (m_inst->pc + (m_inst->imm << 1)) :
+                                                (m_inst->pc + 4); break; }
         case op_lui:  { m_inst->rd_val = m_inst->imm << 12; break; }
         case op_jal:  { m_inst->rd_val = m_inst->pc + 4; break; }
         default:      { break; } // Nothing to do
     }
-#ifdef DEBUG
-    if(divide_by_zero) {
-        cout << *ticks << " : alu : divide-by-zero exception" << endl;
-    } 
-    if(exit_ticks > *ticks) {
-        cout << *ticks << " : alu : " << get_inst_str(run_inst, true) << endl;
+    if (*is_debug_on) {
+        if(divide_by_zero) {
+            program_log << *ticks << " : alu : divide-by-zero exception" << endl;
+        } 
+        if(exit_ticks > *ticks) {
+            program_log << *ticks << " : alu : " << get_inst_str(run_inst, true) << endl;
+        }
     }
-#endif
 }
 
 // Remove an instruction from the ALU.

@@ -1,19 +1,19 @@
 {
-  "name": "@riscv_sim/alfa",
-  "version": "1.0.3",
+  "name": "@riscv_sim/kite",
+  "version": "1.0.1",
   "description": "Inspired from Kite -- developed in 2019 primarily for an educational purpose as a part of EEE3530 Computer Architecture. It supports most of basic instructions introduced in the book such as `add`, `slli`, `ld`, `sd`, `beq` instructions.",
   "main": "index.mjs",
   "typings": "index.d.ts",
   "files": [
     "index.mjs",
     "index.d.ts",
-    "alfa_wasm.wasm",
-    "alfa_wasm.mjs"
+    "kite_wasm.wasm",
+    "kite_wasm.mjs"
   ],
   "scripts": {
-    "build": "docker build . -t alfa-wasm",
+    "build": "docker build . -t kite-wasm",
     "wasm_run": "bun index.mjs",
-    "compile": "docker run --rm -v $(pwd):/etc/alfa-wasm alfa-wasm"
+    "compile": "docker run --rm -v $(pwd):/etc/kite-wasm kite-wasm"
   },
   "keywords": [
     "riscv",

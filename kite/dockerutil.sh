@@ -4,11 +4,11 @@ while getopts c: flag; do
     c)
         case "${OPTARG}" in
         build)
-            docker build . -t alfa-wasm
+            docker build . -t kite-wasm
             ;;
 
         run)
-            docker run --rm -v $(pwd):/etc/alfa-wasm alfa-wasm 
+            docker run --rm -v $(pwd):/etc/kite-wasm kite-wasm 
             ;;
 
         *)

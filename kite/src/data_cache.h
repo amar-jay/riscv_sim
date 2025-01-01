@@ -28,17 +28,19 @@ public:
 // Cache
 class data_cache_t {
 public:
-    data_cache_t(uint64_t *m_ticks, uint64_t m_cache_size,
-                 uint64_t m_block_size = 8, uint64_t m_ways = 1);
+    data_cache_t(
+        uint64_t *m_ticks, uint64_t m_cache_size, 
+        int8_t *is_debug_on, int8_t *is_data_fwd_on,
+        uint64_t m_block_size = 8, uint64_t m_ways = 1);
     ~data_cache_t();
 
     void connect(data_memory_t *m_memory);      // Connect to the lower-level memory.
     bool is_free() const;                       // Is cache free?
-    void read(inst_t *m_inst);                  // Read data from cache.
-    void write(inst_t *m_inst);                 // Write data in cache.
-    void handle_response(int64_t *m_data);      // Handle a memory response.
-    bool run();                                 // Run data cache, and return true when busy.
-    void print_stats();                         // Print cache stats.
+    void read(inst_t *m_inst, std::ostringstream& program_log);                  // Read data from cache.
+    void write(inst_t *m_inst, std::ostringstream& program_log);                 // Write data in cache.
+    void handle_response(int64_t *m_data, std::ostringstream& program_log);      // Handle a memory response.
+    bool run(std::ostringstream& program_log);                                 // Run data cache, and return true when busy.
+    void print_stats(std::ostringstream& program_log);                         // Print cache stats.
 
 private:
     data_memory_t *memory;                      // Pointer to the lower-level memory
@@ -61,6 +63,9 @@ private:
     uint64_t num_writebacks;                    // Number of writebacks
 
     inst_t *missed_inst;                        // Missed memory instruction
+
+    int8_t *is_debug_on;
+    int8_t *is_data_fwd_on;
 };
 
 #endif 
