@@ -1,25 +1,45 @@
-import { useCallback, useEffect } from "react";
-import { type AlfaWasm } from "@riscv_sim/alfa";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { AlfaWasmPromise, AlfaWasm } from "@riscv_sim/alfa";
 interface AlfaProps {
-  alfaInstance: React.MutableRefObject<AlfaWasm | undefined>;
   codeState: string;
   memoryState: string;
   registerState: string;
   setExecOutput: (s: string) => void;
-  RVSettings: {
-    is_debug_on: boolean;
-    is_data_fwd_on: boolean;
-    is_br_pred_on: boolean;
-  };
+}
+
+export enum WasmRequestStatus {
+  ERROR = "error",
+  SUCCESS = "success",
+  LOADING = "loading",
 }
 export function useAlfa({
   codeState,
   registerState,
   memoryState,
-  alfaInstance,
   setExecOutput,
-  RVSettings,
 }: AlfaProps) {
+  const [wasmRequestStatus, setWasmRequestStatus] = useState(
+    WasmRequestStatus.LOADING,
+  );
+  const alfaInstance = useRef<AlfaWasm>();
+
+  useEffect(() => {
+    async function loadAlfaWasm() {
+      try {
+        const wasm = await AlfaWasmPromise;
+
+        if (wasm) {
+          alfaInstance.current = wasm;
+          setWasmRequestStatus(WasmRequestStatus.SUCCESS);
+        }
+      } catch (error) {
+        console.error(error);
+        setWasmRequestStatus(WasmRequestStatus.ERROR);
+      }
+    }
+
+    loadAlfaWasm();
+  }, [alfaInstance]);
   const onRunKiteWasm = useCallback(() => {
     if (!alfaInstance.current) return;
     if (alfaInstance.current instanceof Error) return;
@@ -32,10 +52,9 @@ export function useAlfa({
       _free,
       UTF8ToString,
       _get_exception_message,
-      _malloc,
-      setValue,
+      //_malloc,
+      //setValue,
     } = alfaInstance.current;
-    const { is_debug_on, is_data_fwd_on, is_br_pred_on } = RVSettings;
 
     const codeCharPtr = allocate(
       intArrayFromString(codeState),
@@ -77,7 +96,7 @@ export function useAlfa({
       console.error(e);
       executionOutputCharPtr = _get_exception_message(errorPtr);
       setExecOutput(
-        `${latestRunTime}\n${UTF8ToString(executionOutputCharPtr)}`,
+        `ERROR: ${latestRunTime}\n${UTF8ToString(executionOutputCharPtr)}`,
       );
     } finally {
       [codeCharPtr, memoryCharPtr, registerCharPtr, assemblyCharPtr].forEach(
@@ -87,14 +106,7 @@ export function useAlfa({
         if (ptr) _free(ptr);
       });
     }
-  }, [
-    codeState,
-    registerState,
-    memoryState,
-    RVSettings,
-    alfaInstance,
-    setExecOutput,
-  ]);
+  }, [codeState, registerState, memoryState, alfaInstance, setExecOutput]);
 
   useEffect(() => {
     function runKiteWasmOnCtrlAltRPress(e: KeyboardEvent) {
@@ -109,5 +121,6 @@ export function useAlfa({
 
   return {
     onRunKiteWasm,
+    wasmRequestStatus,
   };
 }

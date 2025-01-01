@@ -18,6 +18,7 @@ interface CodeEditorProps {
   useWorker?: boolean;
   className: string;
   theme: "One Dark" | "monokai" | "tomorrow" | "github";
+  ref: (s: HTMLTextAreaElement | null) => void;
   setCode: (code: string) => void;
 }
 

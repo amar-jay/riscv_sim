@@ -24,15 +24,15 @@ import {
   AlertTriangle,
   Check,
   Cpu,
-  XIcon,
   File,
+  XIcon,
   Search,
   Plus,
   Minus,
   Folder,
   GalleryVerticalEndIcon,
 } from "lucide-react";
-import { lintRISCVAssembly, LinterIssue } from "@/lib/linter";
+import { lintRISCVAssembly } from "@/lib/linter";
 import {
   Tooltip,
   TooltipContent,
@@ -50,107 +50,35 @@ import { Label } from "recharts";
 import { Dialog } from "@radix-ui/react-dialog";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
 import { Editor } from "@/components/ui/editor.tsx";
-interface FileStructure {
-  [key: string]: string | FileStructure;
+
+interface EditorProps {
+  files: CodeFile[];
+  activeFile: CodeFile;
+  setActiveFile: React.Dispatch<React.SetStateAction<CodeFile>>;
+  handleCompile: () => void;
+  setFiles: React.Dispatch<React.SetStateAction<CodeFile[]>>;
+  instructionContent: string;
+  outputContent: string;
+  errorContent: string;
 }
-
-interface File {
-  id: string;
-  name: string;
-  content: string;
-  issues: LinterIssue[];
-  path?: string;
-}
-
-const flattenFileStructure = (
-  structure: FileStructure,
-  basePath: string = "",
-): File[] => {
-  const files: File[] = [];
-
-  const traverse = (obj: FileStructure, currentPath: string) => {
-    Object.entries(obj).forEach(([key, value]) => {
-      const fullPath = currentPath ? `${currentPath}/${key}` : key;
-      if (typeof value === "string") {
-        files.push({
-          id: fullPath,
-          name: key,
-          content: value,
-          issues: [],
-          path: fullPath,
-        });
-      } else {
-        traverse(value, fullPath);
-      }
-    });
-  };
-
-  traverse(structure, basePath);
-  return files;
-};
-
-const _files: FileStructure = {
-  "main.s": `# RISC-V Assembly Example
-.text
-.globl _start
-
-_start:
-    li a0, 1        # File descriptor: 1 is stdout
-    la a1, message  # Load address of message
-    li a2, 13       # Length of message
-    li a7, 64       # System call: write
-    ecall
-
-    li a7, 93       # System call: exit
-    li a0, 0        # Exit code: 0
-    ecall
-
-.data
-message:
-    .string "Hello, RISC-V"
-`,
-  "functions.s": `# RISC-V Assembly Functions
-.text
-.globl add_numbers
-
-add_numbers:
-    add a0, a0, a1
-    ret
-`,
-  examples: {
-    "loop.s": `# RISC-V Assembly Loop Example
-.text
-.globl _start
-
-_start:
-    li t0, 0       # Initialize counter
-    li t1, 10      # Set loop limit
-
-loop:
-    addi t0, t0, 1 # Increment counter
-    blt t0, t1, loop # Branch if less than limit
-
-    li a7, 93      # System call: exit
-    li a0, 0       # Exit code: 0
-    ecall
-`,
-  },
-};
-
-export const RISCVCodeEditor: React.FC = () => {
+export const RISCVCodeEditor: React.FC<EditorProps> = ({
+  activeFile,
+  setActiveFile,
+  files,
+  setFiles,
+  handleCompile,
+  instructionContent,
+  outputContent,
+  errorContent,
+}) => {
   // Convert file structure to initial files with unique IDs and paths
-  const initialFiles = flattenFileStructure(_files);
-
-  const [files, setFiles] = useState<File[]>(initialFiles);
-  const [activeFile, setActiveFile] = useState<File>(initialFiles[0]);
+  //const initialFiles = flattenFileStructure(_files);
+  //const [files, setFiles] = useState<CodeFile[]>(initialFiles);
   const [newFileName, setNewFileName] = useState("");
   const [showTerminal, setShowTerminal] = useState<
     "Output" | "Instructions" | "Errors" | ""
   >("");
   const [showLinter, setShowLinter] = useState(true);
-  const [instructionContent, setInstructionContent] = useState("");
-  const [outputContent, setOutputContent] = useState("");
-  const [errorContent, setErrorContent] = useState("");
   const textareaRefs = useRef<{ [key: string]: HTMLTextAreaElement | null }>(
     {},
   );
@@ -163,7 +91,7 @@ export const RISCVCodeEditor: React.FC = () => {
     if (JSON.stringify(updatedFiles) !== JSON.stringify(files)) {
       setFiles(updatedFiles);
     }
-  }, [files]);
+  }, [files, setFiles]);
 
   const renderFileTree = (structure: FileStructure, path: string = "") => {
     const openFile = (filePath: string) => {
@@ -208,7 +136,7 @@ export const RISCVCodeEditor: React.FC = () => {
       const filename = newFileName.endsWith(".s")
         ? newFileName
         : `${newFileName}.s`;
-      const newFile: File = {
+      const newFile: CodeFile = {
         id: String(Date.now()),
         name: filename,
         content: "# New RISC-V File - " + newFileName + "\n",
@@ -232,14 +160,14 @@ export const RISCVCodeEditor: React.FC = () => {
   };
 
   const updateFileContent = (fileId: string, newContent: string) => {
-    setFiles((prevFiles) =>
+    setFiles((prevFiles: CodeFile[]) =>
       prevFiles.map((file) =>
         file.id === fileId ? { ...file, content: newContent } : file,
       ),
     );
   };
 
-  const renderEditorWithIssues = (file: File) => {
+  const renderEditorWithIssues = (file: CodeFile) => {
     return (
       <div className="flex h-full">
         <div className="flex-1 relative">
@@ -287,8 +215,6 @@ export const RISCVCodeEditor: React.FC = () => {
       <SidebarProvider>
         <AppSidebar
           files={files}
-          activeFile={activeFile}
-          setActiveFile={setActiveFile}
           createFile={addNewFile}
           deleteFile={removeFile}
           newFileName={newFileName}
@@ -454,16 +380,7 @@ export const RISCVCodeEditor: React.FC = () => {
                             className="h-7 px-2 text-xs font-medium flex items-center"
                             variant="outline"
                             onClick={() => {
-                              // Placeholder for compile and run functionality
-                              setInstructionContent(
-                                "Compilation and execution not implemented yet.",
-                              );
-                              setErrorContent(
-                                "Compilation and execution not implemented yet.",
-                              );
-                              setOutputContent(
-                                "Compilation and execution not implemented yet.",
-                              );
+                              handleCompile();
                               setShowTerminal("Output");
                             }}
                           >
@@ -514,8 +431,6 @@ export const RISCVCodeEditor: React.FC = () => {
 
 export function AppSidebar({
   files,
-  activeFile,
-  setActiveFile,
   createFile,
   deleteFile,
   newFileName,
@@ -524,9 +439,7 @@ export function AppSidebar({
   renderFileTree,
   ...props
 }: {
-  files: File[];
-  activeFile: File;
-  setActiveFile: (file: File) => void;
+  files: CodeFile[];
   createFile: () => void;
   deleteFile: (filename: string) => void;
   newFileName: string;
@@ -636,13 +549,12 @@ export function SearchForm({
     <form {...props}>
       <SidebarGroup className="py-0">
         <SidebarGroupContent className="relative">
-          <Label htmlFor="search" className="sr-only">
-            Search
-          </Label>
+          <Label className="sr-only">Search</Label>
           <SidebarInput
             id="search"
             placeholder="Search"
             className="px-8  focus-visible:outline-none"
+            value={newFileName}
             onChange={(e) => setNewFileName(e.target.value)}
           />
           <Search className="pointer-events-none absolute left-2 top-1/2 size-4 -translate-y-1/2 select-none opacity-50" />

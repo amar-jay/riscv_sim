@@ -1,9 +1,3 @@
-export interface LinterIssue {
-  line: number;
-  severity: "error" | "warning";
-  message: string;
-}
-
 export const lintRISCVAssembly = (content: string): LinterIssue[] => {
   const issues: LinterIssue[] = [];
   const lines = content.split("\n");
